@@ -16,10 +16,15 @@ const OP_OPTIONS = [
   { value: 'gte', label: '大於等於 ≥' },
   { value: 'lte', label: '小於等於 ≤' },
 ]
+const VOLUME_OPTIONS = [
+  { value: '', label: '不限' },
+  { value: '1000_5000', label: '1,000～5,000 張' },
+  { value: '5000_10000', label: '5,000～10,000 張' },
+  { value: '10000_up', label: '10,000 張以上' },
+]
 
 const DEFAULT_CONDITION = { ma1: 5, operator: 'gt', ma2: 20, period: '1d' }
 
-// Preset strategies
 const PRESETS = [
   {
     name: '多頭排列（日線）',
@@ -56,42 +61,36 @@ const PRESETS = [
 
 export default function Screener({ onResults, onLoading }) {
   const [conditions, setConditions] = useState([{ ...DEFAULT_CONDITION }])
+  const [volumeFilter, setVolumeFilter] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [progress, setProgress] = useState(0)
 
-  const addCondition = () => {
-    setConditions([...conditions, { ...DEFAULT_CONDITION }])
-  }
-
-  const removeCondition = (idx) => {
-    setConditions(conditions.filter((_, i) => i !== idx))
-  }
-
+  const addCondition = () => setConditions([...conditions, { ...DEFAULT_CONDITION }])
+  const removeCondition = (idx) => setConditions(conditions.filter((_, i) => i !== idx))
   const updateCondition = (idx, field, value) => {
     const updated = [...conditions]
     updated[idx] = { ...updated[idx], [field]: field === 'ma1' || field === 'ma2' ? parseInt(value) : value }
     setConditions(updated)
   }
-
-  const loadPreset = (preset) => {
-    setConditions(preset.conditions.map(c => ({ ...c })))
-  }
+  const loadPreset = (preset) => setConditions(preset.conditions.map(c => ({ ...c })))
 
   const handleScreen = async () => {
     setLoading(true)
     setError('')
     onLoading(true)
 
-    // Simulate progress while waiting
     let prog = 0
     const interval = setInterval(() => {
-      prog = Math.min(prog + Math.random() * 8, 90)
+      prog = Math.min(prog + Math.random() * 6, 90)
       setProgress(Math.round(prog))
-    }, 600)
+    }, 800)
 
     try {
-      const res = await axios.post(`${API_BASE}/api/screen`, { conditions })
+      const res = await axios.post(`${API_BASE}/api/screen`, {
+        conditions,
+        volume_filter: volumeFilter || null,
+      })
       setProgress(100)
       setTimeout(() => setProgress(0), 800)
       onResults(res.data)
@@ -132,61 +131,54 @@ export default function Screener({ onResults, onLoading }) {
           {conditions.map((cond, idx) => (
             <div key={idx} className="condition-row fade-in">
               <div className="condition-num">{idx + 1}</div>
-
               <div className="condition-fields">
-                <select
-                  className="select period-select"
-                  value={cond.period}
-                  onChange={(e) => updateCondition(idx, 'period', e.target.value)}
-                >
-                  {PERIOD_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                <select className="select period-select" value={cond.period}
+                  onChange={(e) => updateCondition(idx, 'period', e.target.value)}>
+                  {PERIOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-
                 <div className="ma-label">MA</div>
-                <select
-                  className="select ma-select"
-                  value={cond.ma1}
-                  onChange={(e) => updateCondition(idx, 'ma1', e.target.value)}
-                >
+                <select className="select ma-select" value={cond.ma1}
+                  onChange={(e) => updateCondition(idx, 'ma1', e.target.value)}>
                   {MA_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
-
-                <select
-                  className="select op-select"
-                  value={cond.operator}
-                  onChange={(e) => updateCondition(idx, 'operator', e.target.value)}
-                >
-                  {OP_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                <select className="select op-select" value={cond.operator}
+                  onChange={(e) => updateCondition(idx, 'operator', e.target.value)}>
+                  {OP_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-
                 <div className="ma-label">MA</div>
-                <select
-                  className="select ma-select"
-                  value={cond.ma2}
-                  onChange={(e) => updateCondition(idx, 'ma2', e.target.value)}
-                >
+                <select className="select ma-select" value={cond.ma2}
+                  onChange={(e) => updateCondition(idx, 'ma2', e.target.value)}>
                   {MA_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
-
               {conditions.length > 1 && (
-                <button
-                  className="remove-btn"
-                  onClick={() => removeCondition(idx)}
-                  title="移除此條件"
-                >✕</button>
+                <button className="remove-btn" onClick={() => removeCondition(idx)}>✕</button>
               )}
             </div>
           ))}
         </div>
 
+        {/* 成交量篩選 */}
+        <div className="volume-section">
+          <div className="volume-label">
+            <span className="vol-icon">📊</span>
+            成交量篩選（張）
+          </div>
+          <div className="volume-options">
+            {VOLUME_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                className={`vol-btn ${volumeFilter === opt.value ? 'active' : ''}`}
+                onClick={() => setVolumeFilter(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {error && <div className="error-msg">⚠ {error}</div>}
 
-        {/* Progress bar */}
         {loading && (
           <div className="progress-wrap">
             <div className="progress-bar" style={{ width: `${progress}%` }}></div>
@@ -194,20 +186,11 @@ export default function Screener({ onResults, onLoading }) {
           </div>
         )}
 
-        <button
-          className={`screen-btn ${loading ? 'loading' : ''}`}
-          onClick={handleScreen}
-          disabled={loading}
-        >
+        <button className={`screen-btn ${loading ? 'loading' : ''}`} onClick={handleScreen} disabled={loading}>
           {loading ? (
-            <>
-              <span className="spinner"></span>
-              篩選中，請稍候...
-            </>
+            <><span className="spinner"></span>篩選中，請稍候...</>
           ) : (
-            <>
-              <span>⌖</span> 開始篩選
-            </>
+            <><span>⌖</span> 開始篩選</>
           )}
         </button>
       </div>

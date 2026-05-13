@@ -273,3 +273,54 @@
   .condition-fields { gap: 6px; }
   .op-select { width: 90px; }
 }
+
+/* 成交量篩選 */
+.volume-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.volume-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vol-icon { font-size: 14px; }
+
+.volume-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vol-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 6px 14px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.vol-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.vol-btn.active {
+  background: rgba(79, 172, 254, 0.15);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  font-weight: 600;
+}
